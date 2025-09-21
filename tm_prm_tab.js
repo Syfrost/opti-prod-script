@@ -264,7 +264,7 @@
     function pasteIntoIframes() {
         const formData = JSON.parse(localStorage.getItem('formulaireCopie'));
         if (!formData) {
-            alert("Aucune donnée à coller. Veuillez copier un formulaire d'abord.");
+            sytoast('warning', "Aucune donnée à coller. Veuillez copier un formulaire d'abord.");
             return;
         }
 

@@ -96,7 +96,7 @@
         if (btn) {
             btn.click();
         } else {
-            //alert('Bouton Valider introuvable!');
+            sytoast('warning', 'Bouton Valider introuvable!');
         }
         };
 

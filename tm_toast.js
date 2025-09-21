@@ -19,6 +19,12 @@
             --ce1: #851d41;
             --ce2: #db3056;
             --ce3: #db305640;
+            /* Geometry vars for the decorative plate (::before) and the badge (::after) */
+            --plate-w: 6.5rem;
+            --plate-h: 6.15rem;
+            --plate-left: -0.15rem;
+            --plate-bottom: -0.15rem;
+            --badge: 3.5rem;
         }
 
         @property --bg-help {
@@ -116,10 +122,11 @@
         .sytoast:before {
             content: "";
             position: absolute;
-            width: 6.5rem;
-            height: 6.15rem;
-            bottom: -0.15rem;
-            left: -0.15rem;
+            width: var(--plate-w);
+            /* Stretch the decorative plate to follow the toast height */
+            top: 0;
+            bottom: var(--plate-bottom);
+            left: var(--plate-left);
             z-index: 0;
             border-radius: 0.35rem;
             background: radial-gradient(circle at 0% 50%, var(--clr), #fff0 5rem), radial-gradient(circle at -50% 50%, var(--bg), #fff0 5rem);
@@ -129,11 +136,13 @@
         .sytoast:after {
             content: "";
             position: absolute;
-            width: 3.5rem;
-            height: 3.5rem;
+            width: var(--badge);
+            height: var(--badge);
             background: radial-gradient(circle at 50% 50%, var(--clr) 1.25rem, var(--brd) calc(1.25rem + 1px) 100%);
-            top: 1.2rem;
-            left: 1rem;
+            /* Position the badge at 25% of the ::before plate width (relative to the plate), not the toast box */
+            left: calc(var(--plate-left) + (var(--plate-w) * 0.42) - (var(--badge) / 2));
+            /* Vertically center relative to the dynamic ::before height (which follows the toast) */
+            top: calc(((100% - var(--plate-bottom)) - var(--badge)) / 2);
             border-radius: 3rem;
             padding-top: 0.2rem;
             display: flex;
@@ -345,6 +354,23 @@
         return sytoast('help', message, duration);
     };
 
+    // Types disponibles (enum-like) pour appels comme sytoast(SyToastType.Warning, 'message')
+    window.SyToastType = Object.freeze({
+        Success: 'success',
+        Warning: 'warning',
+        Error: 'error',
+        Info: 'info',
+        Help: 'help'
+    });
+
+    // Raccourcis optionnels en global (sans écraser le constructeur Error)
+    window.Success = 'success';
+    window.Warning = 'warning';
+    window.Info = 'info';
+    window.Help = 'help';
+    // Pour l'erreur, utilisez ErrorType pour éviter le conflit avec Error
+    window.ErrorType = 'error';
+
     // Fonction pour nettoyer tous les toasts
     window.sytoastClear = function() {
         const container = document.querySelector('.sytoast-container');
@@ -353,11 +379,43 @@
         }
     };
 
+    // Debug helper: toggle and show demo toasts with infinite duration
+    window.sytoastDebugMode = function(enable = true) {
+        try {
+            if (enable) {
+                localStorage.setItem('SY_TOAST_DEBUG', '1');
+            } else {
+                localStorage.removeItem('SY_TOAST_DEBUG');
+            }
+        } catch (e) {
+            // localStorage might be blocked; ignore
+        }
+        if (enable) {
+            const msg = 'DEBUG: notification de type';
+            sytoast('success', `${msg} SUCCESS`, 0);
+            sytoast('warning', `${msg} WARNING`, 0);
+            sytoast('error', `${msg} ERROR`, 0);
+            sytoast('info', `${msg} INFO`, 0);
+            sytoast('help', `${msg} HELP`, 0);
+        } else {
+            sytoastClear();
+        }
+    };
+
+    // Auto-activate debug if flag is present
+    (function() {
+        const globalFlag = (typeof window !== 'undefined' && window.SY_TOAST_DEBUG === true);
+        let storageFlag = false;
+        try {
+            storageFlag = localStorage.getItem('SY_TOAST_DEBUG') === '1';
+        } catch (e) { /* ignore */ }
+        if (globalFlag || storageFlag) {
+            // Slight delay to ensure container is available
+            setTimeout(() => window.sytoastDebugMode(true), 50);
+        }
+    })();
+
     console.log('🍞 Système de toasts SyToast chargé !');
-    console.log('📖 Utilisation:');
-    console.log('  sytoast(type, message, duration)');
-    console.log('  Types: success, warning, error, info, help');
-    console.log('  Exemple: sytoast("success", "Opération réussie !", 3000)');
-    console.log('  Raccourcis: sytoastSuccess(), sytoastWarning(), etc.');
+    console.log('  Debug: activez via window.SY_TOAST_DEBUG = true; ou sytoastDebugMode(true)');
 
 })();

@@ -362,7 +362,7 @@
     function copierFormulaire() {
         const formulaire = document.querySelector('#panel-body-general');
         if (!formulaire) {
-            alert('Formulaire non trouvé sur cette page.');
+            sytoast('error', 'Formulaire non trouvé sur cette page.');
             return;
         }
 
@@ -423,7 +423,7 @@
             const linkToSymbol = document.getElementById('linkToSymbol').checked;
             
             if (!presetName) {
-                alert('Veuillez entrer un nom pour le preset.');
+                sytoast('warning', 'Veuillez entrer un nom pour le preset.');
                 return;
             }
 
@@ -444,7 +444,7 @@
             console.log(`💾 Formulaire copié sous '${presetName}' avec ${componentFailureRequests.length} requêtes de composants`);
             console.log(`🔗 Lié au symbole: ${linkToSymbol ? currentSymbole : 'Non'}`);
             
-            alert(`Formulaire copié sous '${presetName}' !\nRequêtes de composants enregistrées: ${componentFailureRequests.length}\nLié au symbole: ${linkToSymbol ? currentSymbole : 'Non'}`);
+            sytoast('success', `Formulaire copié sous '${presetName}' !<br>Requêtes de composants enregistrées: ${componentFailureRequests.length}<br>Lié au symbole: ${linkToSymbol ? currentSymbole : 'Non'}`);
             
             document.body.removeChild(dialog);
             location.reload(); // pour mettre à jour les boutons
@@ -831,7 +831,7 @@
                 buttonToRemove.remove();
             }
             
-            alert(`Preset "${presetName}" supprimé avec succès !`);
+            sytoast('success', `Preset "${presetName}" supprimé avec succès !`);
         }
     }
 
@@ -879,14 +879,14 @@
     function collerFormulaire(slot) {
         const formulaire = document.querySelector('#panel-body-general');
         if (!formulaire) {
-            alert('Formulaire non trouvé sur cette page.');
+            sytoast('error', 'Formulaire non trouvé sur cette page.');
             return;
         }
 
         let storedCopies = JSON.parse(localStorage.getItem(storageKey));
         const formData = storedCopies[slot]?.data;
         if (!formData) {
-            alert('Aucune donnée enregistrée pour ' + slot);
+            sytoast('warning', 'Aucune donnée enregistrée pour ' + slot);
             return;
         }
 

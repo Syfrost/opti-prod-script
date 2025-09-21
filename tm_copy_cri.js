@@ -51,7 +51,7 @@
     function copierFormulaireCRI() {
         const formulaire = document.querySelector('#panel-body-groupe_saisie_cri');
         if (!formulaire) {
-            alert('Formulaire non trouvé sur cette page.');
+            sytoast('error', 'Formulaire non trouvé sur cette page.');
             return;
         }
 
@@ -65,19 +65,19 @@
         });
 
         localStorage.setItem('formulaireCopie', JSON.stringify(formData));
-        alert('Formulaire copié avec succès dans le stockage local !');
+        sytoast('success', 'Formulaire copié avec succès dans le stockage local !');
     }
 
     function collerFormulaireCRI() {
         const formulaire = document.querySelector('#panel-body-groupe_saisie_cri');
         if (!formulaire) {
-            alert('Formulaire non trouvé sur cette page.');
+            sytoast('error', 'Formulaire non trouvé sur cette page.');
             return;
         }
 
         const formData = JSON.parse(localStorage.getItem('formulaireCopie'));
         if (!formData) {
-            alert('Aucune donnée à coller. Copiez un formulaire d\'abord.');
+            sytoast('warning', 'Aucune donnée à coller. Copiez un formulaire d\'abord.');
             return;
         }
 

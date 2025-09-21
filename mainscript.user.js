@@ -11,16 +11,17 @@
 // @match        planner.cloud.microsoft/webui/myplans/*
 // @match        file:///C:/nginx/html/Prm/Reparation/*
 // @match        file:///C:/nginx/html/*
-// @require      https://raw.githubusercontent.com/Syfrost/JustWork-Next-Extension/refs/heads/New-DA/tampermonkey/tm_utils.js
-// @require      https://raw.githubusercontent.com/Syfrost/JustWork-Next-Extension/refs/heads/master/tampermonkey/tm_check_validation.js
-// @require      https://raw.githubusercontent.com/Syfrost/JustWork-Next-Extension/refs/heads/master/tampermonkey/tm_copy_cri.js
-// @require      https://raw.githubusercontent.com/Syfrost/JustWork-Next-Extension/refs/heads/master/tampermonkey/tm_copy_rex.js
-// @require      https://raw.githubusercontent.com/Syfrost/JustWork-Next-Extension/refs/heads/master/tampermonkey/tm_already_pass.js
-// @require      https://raw.githubusercontent.com/Syfrost/JustWork-Next-Extension/refs/heads/master/tampermonkey/tm_prm_tab.js
-// @require      https://raw.githubusercontent.com/Syfrost/JustWork-Next-Extension/refs/heads/master/tampermonkey/tm_planner_scan.js
-// @require      https://raw.githubusercontent.com/Syfrost/JustWork-Next-Extension/refs/heads/master/tampermonkey/tm_unlock_any.js
-// @updateURL    https://raw.githubusercontent.com/Syfrost/JustWork-Next-Extension/master/tampermonkey/mainscript.user.js
-// @downloadURL  https://raw.githubusercontent.com/Syfrost/JustWork-Next-Extension/master/tampermonkey/mainscript.user.js
+// @require      https://github.com/Syfrost/opti-prod-script/raw/refs/heads/Full-version/tm_utils.js
+// @require      https://github.com/Syfrost/opti-prod-script/raw/refs/heads/Full-version/tm_toast.js
+// @require      https://github.com/Syfrost/opti-prod-script/raw/refs/heads/Full-version/tm_check_validation.js
+// @require      https://github.com/Syfrost/opti-prod-script/raw/refs/heads/Full-version/tm_copy_cri.js
+// @require      https://github.com/Syfrost/opti-prod-script/raw/refs/heads/Full-version/tm_copy_rex.js
+// @require      https://github.com/Syfrost/opti-prod-script/raw/refs/heads/Full-version/tm_already_pass.js
+// @require      https://github.com/Syfrost/opti-prod-script/raw/refs/heads/Full-version/tm_prm_tab.js
+// @require      https://github.com/Syfrost/opti-prod-script/raw/refs/heads/Full-version/tm_planner_scan.js
+// @require      https://github.com/Syfrost/opti-prod-script/raw/refs/heads/Full-version/tm_unlock_any.js
+// @updateURL    https://github.com/Syfrost/opti-prod-script/raw/refs/heads/Full-version/mainscript.user.js
+// @downloadURL  https://github.com/Syfrost/opti-prod-script/raw/refs/heads/Full-version/mainscript.user.js
 // @grant        GM_info
 // @grant        GM_addStyle
 // @grant        GM_xmlhttpRequest
@@ -35,7 +36,7 @@
     'use strict';
 
     const versionLocale = GM_info.script.version;
-    const scriptURL = "https://raw.githubusercontent.com/Syfrost/JustWork-Next-Extension/master/tampermonkey/mainscript.user.js";
+    const scriptURL = "https://github.com/Syfrost/opti-prod-script/raw/refs/heads/Full-version/mainscript.user.js";
 
     console.log("[Script Collector Auto] Version locale :", versionLocale);
 
@@ -86,7 +87,7 @@
         };
 
         // Récupérer le message du dernier commit via l’API GitHub
-        fetch("https://api.github.com/repos/Syfrost/JustWork-Next-Extension/commits?path=tampermonkey/mainscript.user.js&page=1&per_page=1")
+        fetch("https://api.github.com/repos/Syfrost/opti-prod-script/commits?path=mainscript.user.js&page=1&per_page=1")
             .then(res => res.json())
             .then(data => {
                 if (data && data[0] && data[0].commit && data[0].commit.message) {
