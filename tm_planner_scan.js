@@ -455,5 +455,21 @@ GM_registerMenuCommand("🔄 Activer/Désactiver Auto-checker", toggleAutoChecke
         }
         return '✖️';
     }
+
+    /*function extraireValeurDivParTexte(doc, libelle) {
+        const divs = Array.from(doc.querySelectorAll('div'));
+        for (let i = 0; i < divs.length; i++) {
+            if (divs[i].textContent.trim() === libelle) {
+                const suivant = divs[i + 1];
+                if (suivant) {
+                    return suivant.textContent.trim();
+                }
+            }
+        }
+        return 'non trouvé';
+    }*/
+
+
+
 })();
 
