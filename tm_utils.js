@@ -246,7 +246,7 @@ GM_addStyle(`
         border-radius: 50%;
         animation: glowPulse 1s infinite step-end;
     }
-    }
+
         `);
 
 // Fonction globale pour styliser les boutons
