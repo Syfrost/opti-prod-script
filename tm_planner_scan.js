@@ -105,12 +105,12 @@ GM_registerMenuCommand("🔄 Activer/Désactiver Auto-checker", toggleAutoChecke
             if (!lien || !lien.includes('.html')) return;
 
             const numeroReparation = lien.match(/\/(\d+)(?:\.html)?$/)?.[1] || 'inconnu';
-            ajouterOverlayTaskCard(taskCard, numeroReparation, 'Chargement...');
+            ajouterOverlayTaskCard(taskCard, numeroReparation, 'Chargement...', lien);
             testerLienHttp(lien, taskCard);
         });
     }
 
-    function ajouterOverlayTaskCard(taskCard, numeroReparation, texteLabel = 'Chargement...') {
+    function ajouterOverlayTaskCard(taskCard, numeroReparation, texteLabel = 'Chargement...', lienCollector = null) {
         const thumbnail = taskCard.querySelector('.thumbnail.placeholder');
         if (!thumbnail) return;
 
@@ -131,6 +131,8 @@ GM_registerMenuCommand("🔄 Activer/Désactiver Auto-checker", toggleAutoChecke
         container.style.fontSize = '12px';
         container.style.maxWidth = '160px';
         container.style.textAlign = 'center';
+        container.style.cursor = 'pointer'; // Ajoute le curseur pointer
+        container.style.transition = 'transform 0.2s ease'; // Ajoute une transition
 
         container.innerHTML = `
         <div class="autoelement__img__container" style="text-align:center;">
@@ -146,6 +148,35 @@ GM_registerMenuCommand("🔄 Activer/Désactiver Auto-checker", toggleAutoChecke
             ${texteLabel}
         </span>
     `;
+
+        // Stocke le lien dans un attribut data pour pouvoir le récupérer plus tard
+        if (lienCollector) {
+            container.setAttribute('data-collector-link', lienCollector);
+            console.log('[Debug] Lien collector stocké:', lienCollector);
+        } else {
+            console.warn('[Debug] Aucun lien collector fourni');
+        }
+
+        // Ajoute les événements de clic et hover
+        container.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const link = container.getAttribute('data-collector-link');
+            console.log('[Debug] Clic sur autoelement, lien:', link);
+            if (link) {
+                window.open(link, '_blank');
+            } else {
+                console.warn('[Debug] Aucun lien trouvé dans data-collector-link');
+            }
+        });
+
+        container.addEventListener('mouseenter', () => {
+            container.style.transform = 'translate(-50%, -50%) scale(1.05)';
+        });
+
+        container.addEventListener('mouseleave', () => {
+            container.style.transform = 'translate(-50%, -50%) scale(1)';
+        });
 
         thumbnail.style.position = 'relative';
         thumbnail.appendChild(container);
@@ -353,6 +384,8 @@ GM_registerMenuCommand("🔄 Activer/Désactiver Auto-checker", toggleAutoChecke
                         overlay.querySelector('.text-collector').textContent = texteLabel;
                         overlay.querySelector('.text-numeroreparation').textContent = numeroReparation;
                         overlay.classList.remove('http-error');
+                        // Mettre à jour le lien collector
+                        overlay.setAttribute('data-collector-link', lien);
                     }
 
                     const topBar = taskCard.querySelector('.topBar');
