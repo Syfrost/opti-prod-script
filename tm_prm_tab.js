@@ -183,7 +183,7 @@
         const button = document.createElement("button");
         button.id = "btnPasteAllIframes";
         const spanPaste = document.createElement("span");
-        spanPaste.innerText = "Coller Iframe";
+        spanPaste.innerText = "Coller le CRI";
         button.appendChild(spanPaste);
         button.onclick = pasteIntoIframes;
         
@@ -225,7 +225,7 @@
         const button = document.createElement("button");
         button.id = "btnTriggerAllIframes";
         const spanTrigger = document.createElement("span");
-        spanTrigger.innerText = "Traiter Iframe";
+        spanTrigger.innerText = "Etape suivante";
         button.appendChild(spanTrigger);
         button.onclick = triggerButtonsInIframes;
         
@@ -316,13 +316,45 @@
                 const doc = iframe.contentWindow.document;
                 let clicked = false;
 
-                for (const label of priorityList) {
-                    const button = doc.querySelector(`button[collector-form-name="${label}"]`);
-                    if (button) {
-                        button.click();
-                        console.log(`🟢 Clic sur '${label}' dans une iframe`);
+                // Cas spécial : si "Saisie REX" et "Saisie du plan de contrôle" sont tous deux présents,
+                // privilégier celui avec collector-form-type="PC"
+                const saisieRexButton = doc.querySelector(`button[collector-form-name="Saisie REX"]`);
+                const saisieControlButton = doc.querySelector(`button[collector-form-name="Saisie du plan de contrôle"]`);
+                
+                if (saisieRexButton && saisieControlButton) {
+                    // Vérifier si le bouton "Saisie du plan de contrôle" a l'attribut collector-form-type="PC"
+                    const controlButtonWithPC = doc.querySelector(`button[collector-form-name="Saisie du plan de contrôle"][collector-form-type="PC"]`);
+                    if (controlButtonWithPC) {
+                        controlButtonWithPC.click();
+                        console.log(`🟢 Clic prioritaire sur 'Saisie du plan de contrôle' (avec PC) dans une iframe`);
                         clicked = true;
-                        break; // Stoppe à la première priorité trouvée
+                    } else {
+                        // Sinon, suivre l'ordre de priorité normal
+                        saisieRexButton.click();
+                        console.log(`🟢 Clic sur 'Saisie REX' dans une iframe (pas de PC trouvé)`);
+                        clicked = true;
+                    }
+                } else {
+                    // Logique normale de priorité
+                    for (const label of priorityList) {
+                        const button = doc.querySelector(`button[collector-form-name="${label}"]`);
+                        if (button) {
+                            button.click();
+                            console.log(`🟢 Clic sur '${label}' dans une iframe`);
+                            clicked = true;
+                            break; // Stoppe à la première priorité trouvée
+                        }
+                    }
+                    
+                    // Si aucun bouton de la liste de priorité n'a été trouvé, 
+                    // chercher le bouton "Renvoi vers magasinier" en dernier recours
+                    if (!clicked) {
+                        const renvoiButton = doc.querySelector(`button[collector-next-state-name*="PRÊT A EXPEDIER"]`);
+                        if (renvoiButton) {
+                            renvoiButton.click();
+                            console.log(`🟢 Clic sur 'Renvoi vers magasinier' dans une iframe`);
+                            clicked = true;
+                        }
                     }
                 }
 
