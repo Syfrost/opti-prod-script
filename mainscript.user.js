@@ -9,8 +9,6 @@
 // @match        https://prod.cloud-collectorplus.mt.sncf.fr/*
 // @match        planner.cloud.microsoft/webui/mytasks/*
 // @match        planner.cloud.microsoft/webui/myplans/*
-// @match        file:///C:/nginx/html/Prm/Reparation/*
-// @match        file:///C:/nginx/html/*
 // @require      https://github.com/Syfrost/opti-prod-script/raw/refs/heads/Full-version/tm_utils.js
 // @require      https://github.com/Syfrost/opti-prod-script/raw/refs/heads/Full-version/tm_toast.js
 // @require      https://github.com/Syfrost/opti-prod-script/raw/refs/heads/Full-version/tm_check_validation.js
