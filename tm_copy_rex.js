@@ -938,7 +938,8 @@
                     console.log('🔄 Validation du textarea en cours...');
                     validateTextarea(textareaElement.value).then((ok) => {
                         if (ok) {
-                            sytoast('success', 'Données collées et validées avec succès pour ' + slot);
+                            const presetLabel = storedCopies[slot]?.label || slot;
+                            sytoast('success', 'Données collées et validées avec succès pour ' + presetLabel);
                         } else {
                             sytoast('error', "Échec de la validation du textarea.");
                         }
