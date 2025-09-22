@@ -886,7 +886,7 @@
         let storedCopies = JSON.parse(localStorage.getItem(storageKey));
         const formData = storedCopies[slot]?.data;
         if (!formData) {
-            sytoast('warning', 'Aucune donnée enregistrée pour ' + slot);
+            sytoast('error', 'Aucune donnée enregistrée pour ' + slot);
             return;
         }
 
@@ -936,7 +936,14 @@
                 const textareaElement = document.getElementById('S_observation_reparation');
                 if (textareaElement && textareaElement.value) {
                     console.log('🔄 Validation du textarea en cours...');
-                    validateTextarea(textareaElement.value);
+                    validateTextarea(textareaElement.value).then((ok) => {
+                        if (ok) {
+                            const presetLabel = storedCopies[slot]?.label || slot;
+                            sytoast('success', 'Données collées et validées avec succès pour ' + presetLabel);
+                        } else {
+                            sytoast('error', "Échec de la validation du textarea.");
+                        }
+                    });
                 }
             }
         };
@@ -1020,6 +1027,7 @@
         }
 
         console.log('🎉 Toutes les requêtes de composants ont été rejouées');
+        sytoast('success', 'Composant ajouté avec succès !');
     }
 
     // Fonction pour mettre à jour le tableau des composants avec le HTML reçu
