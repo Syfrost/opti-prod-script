@@ -316,22 +316,24 @@
                 const doc = iframe.contentWindow.document;
                 let clicked = false;
 
-                // Cas spécial : si "Saisie REX" et "Saisie du plan de contrôle" sont tous deux présents,
-                // privilégier celui avec collector-form-type="PC"
+                // Cas spécial : si "Saisie REX" et "Saisie du plan de contrôle" sont tous deux présents
                 const saisieRexButton = doc.querySelector(`button[collector-form-name="Saisie REX"]`);
                 const saisieControlButton = doc.querySelector(`button[collector-form-name="Saisie du plan de contrôle"]`);
                 
                 if (saisieRexButton && saisieControlButton) {
-                    // Vérifier si le bouton "Saisie du plan de contrôle" a l'attribut collector-form-type="PC"
-                    const controlButtonWithPC = doc.querySelector(`button[collector-form-name="Saisie du plan de contrôle"][collector-form-type="PC"]`);
-                    if (controlButtonWithPC) {
-                        controlButtonWithPC.click();
-                        console.log(`🟢 Clic prioritaire sur 'Saisie du plan de contrôle' (avec PC) dans une iframe`);
+                    // Vérifier le contenu du span pour distinguer "Contrôle de sortie" de "Modifier Plan de Contrôle"
+                    const controlButtonSpan = saisieControlButton.querySelector('span');
+                    const controlButtonText = controlButtonSpan ? controlButtonSpan.textContent.trim() : '';
+                    
+                    // Si c'est "Contrôle de sortie", on le privilégie
+                    if (controlButtonText.includes('Contrôle de sortie')) {
+                        saisieControlButton.click();
+                        console.log(`🟢 Clic prioritaire sur 'Contrôle de sortie' dans une iframe`);
                         clicked = true;
                     } else {
-                        // Sinon, suivre l'ordre de priorité normal
+                        // Sinon (ex: "Modifier Plan de Contrôle"), on privilégie "Saisie REX"
                         saisieRexButton.click();
-                        console.log(`🟢 Clic sur 'Saisie REX' dans une iframe (pas de PC trouvé)`);
+                        console.log(`🟢 Clic prioritaire sur 'Saisie REX' (pas de contrôle de sortie) dans une iframe`);
                         clicked = true;
                     }
                 } else {
@@ -345,15 +347,18 @@
                             break; // Stoppe à la première priorité trouvée
                         }
                     }
-                    
-                    // Si aucun bouton de la liste de priorité n'a été trouvé, 
-                    // chercher le bouton "Renvoi vers magasinier" en dernier recours
-                    if (!clicked) {
-                        const renvoiButton = doc.querySelector(`button[collector-next-state-name*="PRÊT A EXPEDIER"]`);
-                        if (renvoiButton) {
-                            renvoiButton.click();
-                            console.log(`🟢 Clic sur 'Renvoi vers magasinier' dans une iframe`);
+                }
+
+                // Si aucun bouton prioritaire n'a été trouvé, chercher "Renvoi vers magasinier" en dernière priorité
+                if (!clicked) {
+                    const buttons = doc.querySelectorAll('button.btn.btn-primary.button-next_etat');
+                    for (const button of buttons) {
+                        const span = button.querySelector('span');
+                        if (span && span.textContent.trim() === 'Renvoi vers magasinier') {
+                            button.click();
+                            console.log(`🟢 Clic sur 'Renvoi vers magasinier' (dernière priorité) dans une iframe`);
                             clicked = true;
+                            break;
                         }
                     }
                 }
