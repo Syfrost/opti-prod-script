@@ -349,6 +349,20 @@
                     }
                 }
 
+                // Si aucun bouton prioritaire n'a été trouvé, chercher "Renvoi vers magasinier" en dernière priorité
+                if (!clicked) {
+                    const buttons = doc.querySelectorAll('button.btn.btn-primary.button-next_etat');
+                    for (const button of buttons) {
+                        const span = button.querySelector('span');
+                        if (span && span.textContent.trim() === 'Renvoi vers magasinier') {
+                            button.click();
+                            console.log(`🟢 Clic sur 'Renvoi vers magasinier' (dernière priorité) dans une iframe`);
+                            clicked = true;
+                            break;
+                        }
+                    }
+                }
+
                 if (!clicked) {
                     console.log("⚠️ Aucun bouton prioritaire trouvé dans une iframe");
                 }
