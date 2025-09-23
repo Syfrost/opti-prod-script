@@ -316,13 +316,36 @@
                 const doc = iframe.contentWindow.document;
                 let clicked = false;
 
-                for (const label of priorityList) {
-                    const button = doc.querySelector(`button[collector-form-name="${label}"]`);
-                    if (button) {
-                        button.click();
-                        console.log(`🟢 Clic sur '${label}' dans une iframe`);
+                // Cas spécial : si "Saisie REX" et "Saisie du plan de contrôle" sont tous deux présents
+                const saisieRexButton = doc.querySelector(`button[collector-form-name="Saisie REX"]`);
+                const saisieControlButton = doc.querySelector(`button[collector-form-name="Saisie du plan de contrôle"]`);
+                
+                if (saisieRexButton && saisieControlButton) {
+                    // Vérifier le contenu du span pour distinguer "Contrôle de sortie" de "Modifier Plan de Contrôle"
+                    const controlButtonSpan = saisieControlButton.querySelector('span');
+                    const controlButtonText = controlButtonSpan ? controlButtonSpan.textContent.trim() : '';
+                    
+                    // Si c'est "Contrôle de sortie", on le privilégie
+                    if (controlButtonText.includes('Contrôle de sortie')) {
+                        saisieControlButton.click();
+                        console.log(`🟢 Clic prioritaire sur 'Contrôle de sortie' dans une iframe`);
                         clicked = true;
-                        break; // Stoppe à la première priorité trouvée
+                    } else {
+                        // Sinon (ex: "Modifier Plan de Contrôle"), on privilégie "Saisie REX"
+                        saisieRexButton.click();
+                        console.log(`🟢 Clic prioritaire sur 'Saisie REX' (pas de contrôle de sortie) dans une iframe`);
+                        clicked = true;
+                    }
+                } else {
+                    // Logique normale de priorité
+                    for (const label of priorityList) {
+                        const button = doc.querySelector(`button[collector-form-name="${label}"]`);
+                        if (button) {
+                            button.click();
+                            console.log(`🟢 Clic sur '${label}' dans une iframe`);
+                            clicked = true;
+                            break; // Stoppe à la première priorité trouvée
+                        }
                     }
                 }
 
