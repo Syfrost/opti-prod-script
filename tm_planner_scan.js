@@ -43,6 +43,9 @@ GM_registerMenuCommand("🔄 Activer/Désactiver Auto-checker", toggleAutoChecke
     const donneesTaches = []; // tableau global pour stocker les infos extraites
     let liensEnCours = 0;
     let postEnCours = 0;
+    let totalTaches = 0;
+    let tachesTraitees = 0;
+    let boutonScan = null;
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
@@ -59,37 +62,156 @@ GM_registerMenuCommand("🔄 Activer/Désactiver Auto-checker", toggleAutoChecke
             return; // Ne pas afficher le bouton si on n'est pas sur Microsoft Planner
         }
 
-        const bouton = document.createElement('button');
-        bouton.textContent = 'SCAN';
+        // Supprimer l'ancien bouton s'il existe
+        const ancienBouton = document.getElementById('scan-button');
+        if (ancienBouton) ancienBouton.remove();
+
+        const bouton = document.createElement('div');
+        bouton.id = 'scan-button';
         bouton.style.position = 'fixed';
         bouton.style.width = '65px';
         bouton.style.height = '65px';
         bouton.style.bottom = '20px';
         bouton.style.right = '20px';
         bouton.style.zIndex = '9999';
-        bouton.style.padding = '10px 15px';
-        bouton.style.background = 'rgba(0, 0, 0, 0.1)';
-        bouton.style.color = '#fff';
+        bouton.style.background = 'rgba(0, 0, 0, 0.65)';
         bouton.style.border = '2px solid rgb(255, 128, 0)';
         bouton.style.borderRadius = '50px';
-        bouton.style.fontSize = '14px';
         bouton.style.cursor = 'pointer';
         bouton.style.boxShadow = '0 2px 8px rgba(255, 104, 0, 0.8)';
         bouton.style.backdropFilter = 'blur(5px)';
         bouton.style.display = 'flex';
         bouton.style.justifyContent = 'center';
         bouton.style.alignItems = 'center';
+        bouton.style.flexDirection = 'column';
+
+        // SVG pour la barre de progression circulaire
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.style.position = 'absolute';
+        svg.style.top = '2px';
+        svg.style.left = '2px';
+        svg.style.width = '61px';
+        svg.style.height = '61px';
+        svg.style.transform = 'rotate(-90deg)';
+        svg.style.pointerEvents = 'none';
+
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', '30.5');
+        circle.setAttribute('cy', '30.5');
+        circle.setAttribute('r', '28');
+        circle.setAttribute('stroke', 'rgba(255, 128, 0, 0.8)');
+        circle.setAttribute('stroke-width', '2');
+        circle.setAttribute('fill', 'none');
+        circle.setAttribute('stroke-dasharray', '175.929'); // 2 * PI * 28
+        circle.setAttribute('stroke-dashoffset', '175.929');
+        circle.setAttribute('stroke-linecap', 'round');
+        circle.style.transition = 'stroke-dashoffset 0.3s ease';
+        circle.id = 'progress-circle';
+
+        svg.appendChild(circle);
+        bouton.appendChild(svg);
+
+        // Contenu du bouton
+        const contenu = document.createElement('div');
+        contenu.style.position = 'relative';
+        contenu.style.zIndex = '10';
+        contenu.style.display = 'flex';
+        contenu.style.flexDirection = 'column';
+        contenu.style.alignItems = 'center';
+        contenu.style.justifyContent = 'center';
+        contenu.style.pointerEvents = 'none';
+
+        const texte = document.createElement('span');
+        texte.textContent = 'SCAN';
+        texte.style.color = '#fff';
+        texte.style.fontSize = '10px';
+        texte.style.fontWeight = 'bold';
+        texte.style.marginBottom = '2px';
+        texte.id = 'scan-text';
+
+        const compteur = document.createElement('span');
+        compteur.textContent = '0/0';
+        compteur.style.color = '#fff';
+        compteur.style.fontSize = '8px';
+        compteur.style.opacity = '0.8';
+        compteur.style.display = 'none'; // Masqué par défaut à l'initialisation
+        compteur.id = 'scan-counter';
+
+        contenu.appendChild(texte);
+        contenu.appendChild(compteur);
+        bouton.appendChild(contenu);
 
         bouton.addEventListener('click', scanContainers);
 
         document.body.appendChild(bouton);
+        boutonScan = bouton;
+    }
+
+    function mettreAJourProgression() {
+        const circle = document.getElementById('progress-circle');
+        const compteur = document.getElementById('scan-counter');
+        const texte = document.getElementById('scan-text');
+        
+        if (circle && compteur) {
+            const pourcentage = totalTaches > 0 ? tachesTraitees / totalTaches : 0;
+            const circonference = 175.929; // 2 * PI * 28
+            const offset = circonference - (pourcentage * circonference);
+            
+            circle.setAttribute('stroke-dashoffset', offset.toString());
+            
+            // Afficher ou masquer le compteur selon l'état du scan
+            if (totalTaches === 0) {
+                compteur.style.display = 'none';
+            } else {
+                compteur.style.display = 'block';
+                compteur.textContent = `${tachesTraitees}/${totalTaches}`;
+            }
+            
+            if (tachesTraitees === totalTaches && totalTaches > 0) {
+                texte.textContent = 'OK';
+                setTimeout(() => {
+                    texte.textContent = 'SCAN';
+                    circle.setAttribute('stroke-dashoffset', '175.929');
+                    compteur.style.display = 'none';
+                }, 2000);
+            }
+        }
+    }
+
+    function reinitialiserProgression() {
+        tachesTraitees = 0;
+        totalTaches = 0;
+        mettreAJourProgression();
     }
 
 
     function scanContainers() {
         console.log('[Planner Script] Démarrage avec scan des conteneurs...');
+        
+        // Réinitialiser la progression
+        reinitialiserProgression();
+        
         const containers = document.querySelectorAll('div.ms-FocusZone');
         console.log(containers);
+        
+        // Compter le nombre total de tâches à traiter
+        let tachesValides = 0;
+        containers.forEach(container => {
+            const taskCard = container.querySelector('div.taskCard');
+            if (!taskCard) return;
+
+            const lienElement = container.querySelector('a.referencePreviewDescription');
+            let lien = lienElement?.getAttribute('href') || lienElement?.getAttribute('title');
+
+            if (lien && !lien.endsWith('.html')) lien += '.html';
+            if (lien && lien.includes('.html')) {
+                tachesValides++;
+            }
+        });
+        
+        totalTaches = tachesValides;
+        mettreAJourProgression();
+        
         containers.forEach(container => {
             const taskCard = container.querySelector('div.taskCard');
             if (!taskCard) {
@@ -432,6 +554,8 @@ GM_registerMenuCommand("🔄 Activer/Désactiver Auto-checker", toggleAutoChecke
 
 
                     liensEnCours = Math.max(0, liensEnCours - 1);
+                    tachesTraitees++;
+                    mettreAJourProgression();
 
                 } else {
                     if (tentative < maxTentatives) {
@@ -442,6 +566,8 @@ GM_registerMenuCommand("🔄 Activer/Désactiver Auto-checker", toggleAutoChecke
                             overlay.classList.add('http-co-error');
                         }
                         liensEnCours = Math.max(0, liensEnCours - 1);
+                        tachesTraitees++;
+                        mettreAJourProgression();
                     }
                 }
             },
@@ -455,6 +581,8 @@ GM_registerMenuCommand("🔄 Activer/Désactiver Auto-checker", toggleAutoChecke
                         overlay.classList.add('http-error');
                     }
                     liensEnCours = Math.max(0, liensEnCours - 1);
+                    tachesTraitees++;
+                    mettreAJourProgression();
                 }
             }
         });
