@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Script collector auto modif DA
 // @namespace    https://github.com/Syfrost/JustWork-Next-Extension
-// @version      1.6.5
+// @version      1.7.0
 // @description  Charge plusieurs scripts distants
 // @author       Cedric G
 // @connect      prod.cloud-collectorplus.mt.sncf.fr
