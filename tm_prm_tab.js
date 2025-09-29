@@ -3,10 +3,14 @@
 
     const processedRows = new WeakSet();
     const iframeReloadAttempts = new WeakMap();
-    
+
     // Flags pour éviter la création multiple des boutons
     let pasteButtonCreated = false;
     let triggerButtonCreated = false;
+    let injectionButtonCreated = false;
+
+    // Variables pour stocker les données collector
+    let collectorData = [];
 
     function renderIframe(pk, element) {
         const row = element.closest('tr');
@@ -85,6 +89,24 @@
         const toolbar = document.querySelector('#dataTablePrmFilles_wrapper .dt-buttons');
         if (toolbar && !document.getElementById('btnOpenAllIframes')) {
             createOpenAllButton();
+        }
+
+        // Conditions pour le bouton injection
+        const wrapperExists = document.getElementById('dataTablePrmFilles_wrapper') !== null;
+        const prmUraActive = document.querySelector('#PRM_ura.active') !== null;
+        const hasCollectorLinks = document.querySelectorAll('#dataTablePrmFilles a.openIframeLink').length > 0;
+        const hasFormData = localStorage.getItem('formulaireCopie') !== null;
+        const shouldShowInjection = wrapperExists && prmUraActive && hasCollectorLinks && hasFormData;
+
+        // Gestion du bouton injection basée sur les conditions
+        if (shouldShowInjection && !injectionButtonCreated) {
+            const injectionContainer = getFloatingButtonArea();
+            if (injectionContainer) {
+                createInjectionButton();
+            }
+        } else if (!shouldShowInjection && injectionButtonCreated) {
+            removeFloatingButton('btnInjectionAllIframes');
+            injectionButtonCreated = false;
         }
 
         const iframes = document.querySelectorAll('tr.iframe-row iframe');
@@ -172,7 +194,7 @@
             console.log("❌ Container non trouvé");
             return;
         }
-        
+
         // Vérification plus stricte pour éviter les doublons
         if (document.getElementById("btnPasteAllIframes")) {
             console.log("⚠️ Bouton btnPasteAllIframes existe déjà");
@@ -186,7 +208,7 @@
         spanPaste.innerText = "Coller le CRI";
         button.appendChild(spanPaste);
         button.onclick = pasteIntoIframes;
-        
+
         // Vérification que window.styleButton existe
         if (typeof window.styleButton === 'function') {
             window.styleButton(button, "#17a2b8", "fa-paste");
@@ -214,7 +236,7 @@
             console.log("❌ Container non trouvé");
             return;
         }
-        
+
         // Vérification plus stricte pour éviter les doublons
         if (document.getElementById("btnTriggerAllIframes")) {
             console.log("⚠️ Bouton btnTriggerAllIframes existe déjà");
@@ -228,7 +250,7 @@
         spanTrigger.innerText = "Etape suivante";
         button.appendChild(spanTrigger);
         button.onclick = triggerButtonsInIframes;
-        
+
         // Vérification que window.styleButton existe
         if (typeof window.styleButton === 'function') {
             window.styleButton(button, "#007bff", "fa-bolt");
@@ -249,6 +271,48 @@
         console.log("✅ Bouton 'Traiter Iframe' ajouté");
     }
 
+    function createInjectionButton() {
+        console.log("🔍 createInjectionButton appelée");
+        const container = getFloatingButtonArea();
+        if (!container) {
+            console.log("❌ Container non trouvé");
+            return;
+        }
+
+        // Vérification plus stricte pour éviter les doublons
+        if (document.getElementById("btnInjectionAllIframes")) {
+            console.log("⚠️ Bouton btnInjectionAllIframes existe déjà");
+            return;
+        }
+
+        console.log("🔍 Container trouvé, création du bouton...");
+        const button = document.createElement("button");
+        button.id = "btnInjectionAllIframes";
+        const spanInjection = document.createElement("span");
+        spanInjection.innerText = "Injection Cri";
+        button.appendChild(spanInjection);
+        button.onclick = injectDataToAllLinks;
+
+        // Vérification que window.styleButton existe
+        if (typeof window.styleButton === 'function') {
+            window.styleButton(button, "#28a745", "fa-syringe");
+        } else {
+            console.error("❌ window.styleButton non disponible dans tm_prm_tab - createInjectionButton");
+            // Style de base en fallback
+            button.style.backgroundColor = "#28a745";
+            button.style.color = "white";
+            button.style.padding = "5px 10px";
+            button.style.border = "none";
+            button.style.borderRadius = "5px";
+            button.style.cursor = "pointer";
+            button.style.margin = "5px";
+        }
+
+        container.prepend(button);
+        injectionButtonCreated = true;
+        console.log("✅ Bouton 'Injection' ajouté");
+    }
+
     function removeFloatingButton(id) {
         const btn = document.getElementById(id);
         if (btn) {
@@ -258,7 +322,172 @@
     }
 
     function getFloatingButtonArea() {
-        return document.querySelector('div[style*="position: fixed;"][style*="bottom: 10px;"][style*="right: 10px;"]');
+        let container = document.querySelector('div[style*="position: fixed;"][style*="bottom: 10px;"][style*="right: 10px;"]');
+
+        // Si le container n'existe pas, on le crée
+        if (!container) {
+            container = document.createElement('div');
+            container.style.cssText = `
+                position: fixed;
+                bottom: 10px;
+                right: 10px;
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
+                z-index: 9999;
+            `;
+            document.body.appendChild(container);
+            console.log("🏗️ Container floating buttons créé");
+        }
+
+        return container;
+    }
+
+    function collectCollectorLinks() {
+        const links = Array.from(document.querySelectorAll('#dataTablePrmFilles a.openIframeLink'));
+        const collectorLinks = [];
+
+        links.forEach(link => {
+            const pk = link.getAttribute('pk');
+            if (pk) {
+                const collectorUrl = `https://prod.cloud-collectorplus.mt.sncf.fr/Prm/Reparation/${pk}.html`;
+                collectorLinks.push({
+                    pk: pk,
+                    url: collectorUrl,
+                    numeroReparation: pk
+                });
+            }
+        });
+
+        console.log(`📋 ${collectorLinks.length} liens collector récupérés`);
+        return collectorLinks;
+    }
+
+    function fetchCollectorData(collectorUrl) {
+        return new Promise((resolve, reject) => {
+            fetch(collectorUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.text();
+                })
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+
+                    const idSymboleInput = doc.getElementById('idSymbole');
+                    const idUserInput = doc.getElementById('idUser');
+
+                    resolve({
+                        idSymbole: idSymboleInput ? idSymboleInput.value.trim() : '',
+                        idUser: idUserInput ? idUserInput.value.trim() : ''
+                    });
+                })
+                .catch(error => {
+                    console.error('❌ Erreur lors de la récupération des données collector:', error);
+                    reject(error);
+                });
+        });
+    }
+
+    async function injectDataToAllLinks() {
+        const formData = JSON.parse(localStorage.getItem('formulaireCopie'));
+        if (!formData) {
+            if (typeof sytoast === 'function') {
+                sytoast('warning', "Aucune donnée à injecter. Veuillez copier un formulaire d'abord.");
+            } else {
+                alert("Aucune donnée à injecter. Veuillez copier un formulaire d'abord.");
+            }
+            return;
+        }
+
+        const button = document.getElementById("btnInjectionAllIframes");
+        const span = button.querySelector('span');
+        const originalText = span.innerText;
+
+        // Récupérer tous les liens collector
+        const collectorLinks = collectCollectorLinks();
+
+        if (collectorLinks.length === 0) {
+            span.innerText = "Aucun lien";
+            button.style.backgroundColor = "#dc3545";
+            setTimeout(() => {
+                span.innerText = originalText;
+                button.style.backgroundColor = "#28a745";
+            }, 2000);
+            return;
+        }
+
+        span.innerText = `Traitement 0/${collectorLinks.length}`;
+        button.style.backgroundColor = "#ffc107";
+
+        let completed = 0;
+        let errors = 0;
+
+        for (const link of collectorLinks) {
+            try {
+                // Récupérer les données collector (idSymbole, idUser)
+                const collectorInfo = await fetchCollectorData(link.url);
+
+                // Préparer le payload avec les données du localStorage
+                const payload = new URLSearchParams({
+                    S_num_cri: formData.S_num_cri || '',
+                    t_materiel_idt_materiel: formData.t_materiel_idt_materiel || '',
+                    t_site_intervention_idt_site_intervention: formData.t_site_intervention_idt_site_intervention || '',
+                    fk_cause_depose: formData.fk_cause_depose || '',
+                    D_date_eve: formData.D_date_eve || '',
+                    S_num_rame: formData.S_num_rame || '',
+                    S_num_veh: formData.S_num_veh || '',
+                    I_kilometrage: formData.I_kilometrage || '',
+                    S_commentaire: formData.S_commentaire || '',
+                    form_id: 'Saisie_CRI',
+                    transition_id: '268',
+                    idSymbole: collectorInfo.idSymbole,
+                    idUser: collectorInfo.idUser,
+                    current_repair_id: link.numeroReparation
+                }).toString();
+
+                // Faire la requête POST
+                const response = await fetch('https://prod.cloud-collectorplus.mt.sncf.fr/Prm/Reparation/processTransitionForm', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: payload
+                });
+
+                if (response.status === 200) {
+                    completed++;
+                    console.log(`✅ Injection réussie pour ${link.numeroReparation}`);
+                } else {
+                    errors++;
+                    console.error(`❌ Erreur HTTP ${response.status} pour ${link.numeroReparation}`);
+                }
+
+            } catch (error) {
+                errors++;
+                console.error(`❌ Erreur lors de l'injection pour ${link.numeroReparation}:`, error);
+            }
+
+            // Mettre à jour le texte du bouton
+            span.innerText = `Traitement ${completed + errors}/${collectorLinks.length}`;
+        }
+
+        // Résultat final
+        if (errors === 0) {
+            span.innerText = `✅ ${completed}/${collectorLinks.length}`;
+            button.style.backgroundColor = "#28a745";
+        } else {
+            span.innerText = `⚠️ ${completed}/${collectorLinks.length} (${errors} erreurs)`;
+            button.style.backgroundColor = "#dc3545";
+        }
+
+        // Remettre le texte original après 3 secondes
+        setTimeout(() => {
+            span.innerText = originalText;
+            button.style.backgroundColor = "#28a745";
+        }, 3000);
     }
 
     function pasteIntoIframes() {
@@ -319,12 +548,12 @@
                 // Cas spécial : si "Saisie REX" et "Saisie du plan de contrôle" sont tous deux présents
                 const saisieRexButton = doc.querySelector(`button[collector-form-name="Saisie REX"]`);
                 const saisieControlButton = doc.querySelector(`button[collector-form-name="Saisie du plan de contrôle"]`);
-                
+
                 if (saisieRexButton && saisieControlButton) {
                     // Vérifier le contenu du span pour distinguer "Contrôle de sortie" de "Modifier Plan de Contrôle"
                     const controlButtonSpan = saisieControlButton.querySelector('span');
                     const controlButtonText = controlButtonSpan ? controlButtonSpan.textContent.trim() : '';
-                    
+
                     // Si c'est "Contrôle de sortie", on le privilégie
                     if (controlButtonText.includes('Contrôle de sortie')) {
                         saisieControlButton.click();
@@ -460,5 +689,66 @@
             }
         });
     }
+
+    // Observer pour surveiller la disparition du wrapper et les changements d'onglet
+    function initWrapperObserver() {
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                // Vérifier les nœuds supprimés
+                mutation.removedNodes.forEach((node) => {
+                    if (node.nodeType === 1) { // Element node
+                        // Si le wrapper lui-même est supprimé
+                        if (node.id === 'dataTablePrmFilles_wrapper') {
+                            console.log('🗑️ dataTablePrmFilles_wrapper supprimé - Retrait du bouton injection');
+                            removeFloatingButton('btnInjectionAllIframes');
+                            injectionButtonCreated = false;
+                        }
+                        // Ou si un parent contenant le wrapper est supprimé
+                        else if (node.querySelector && node.querySelector('#dataTablePrmFilles_wrapper')) {
+                            console.log('🗑️ Parent contenant dataTablePrmFilles_wrapper supprimé - Retrait du bouton injection');
+                            removeFloatingButton('btnInjectionAllIframes');
+                            injectionButtonCreated = false;
+                        }
+                    }
+                });
+
+                // Vérifier les changements d'attributs (changement d'onglet actif)
+                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                    const target = mutation.target;
+                    if (target.id === 'PRM_ura') {
+                        const isActive = target.classList.contains('active');
+                        if (!isActive && injectionButtonCreated) {
+                            console.log('🔄 Onglet PRM_ura désactivé - Retrait du bouton injection');
+                            removeFloatingButton('btnInjectionAllIframes');
+                            injectionButtonCreated = false;
+                        }
+                    }
+                }
+            });
+
+            // Double vérification : si les conditions ne sont plus remplies
+            const wrapperExists = document.getElementById('dataTablePrmFilles_wrapper') !== null;
+            const prmUraActive = document.querySelector('#PRM_ura.active') !== null;
+
+            if ((!wrapperExists || !prmUraActive) && injectionButtonCreated) {
+                console.log('🗑️ Conditions non remplies - Retrait du bouton injection');
+                removeFloatingButton('btnInjectionAllIframes');
+                injectionButtonCreated = false;
+            }
+        });
+
+        // Observer les changements sur tout le document
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['class']
+        });
+
+        console.log('👁️ Observer pour dataTablePrmFilles_wrapper et PRM_ura initialisé');
+    }
+
+    // Initialiser l'observer après un court délai
+    setTimeout(initWrapperObserver, 1000);
 
 })();
