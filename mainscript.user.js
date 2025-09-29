@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         Script collector auto modif DA
+// @name         Script collector auto
 // @namespace    https://github.com/Syfrost/opti-prod-script
 // @version      1.7.2
 // @description  Améliorations diverses pour Collector+ (Copie CRI, REX, Validation, Onglets PRM...)
-// @author       Cedric G
+// @author       Cedric GEORGES
 // @connect      prod.cloud-collectorplus.mt.sncf.fr
 // @match        https://prod.cloud-collectorplus.mt.sncf.fr/Prm/Reparation/*
 // @match        https://prod.cloud-collectorplus.mt.sncf.fr/*
