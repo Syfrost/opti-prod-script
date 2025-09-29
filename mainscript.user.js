@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         Script collector auto modif DA
-// @namespace    https://github.com/Syfrost/JustWork-Next-Extension
-// @version      1.7.0
+// @name         Script collector auto
+// @namespace    https://github.com/Syfrost/opti-prod-script/
+// @version      1.7.2
 // @description  Charge plusieurs scripts distants
-// @author       Cedric G
+// @author       Cedric GEORGES
 // @connect      prod.cloud-collectorplus.mt.sncf.fr
 // @match        https://prod.cloud-collectorplus.mt.sncf.fr/Prm/Reparation/*
 // @match        https://prod.cloud-collectorplus.mt.sncf.fr/*
